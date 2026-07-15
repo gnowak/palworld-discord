@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, ActivityType } = require('discord.js');
+const { Client, GatewayIntentBits, ActivityType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const config = require('./config');
 const { registerCommands } = require('./commands');
 const system = require('./system');
@@ -49,24 +49,82 @@ client.on('interactionCreate', async (interaction) => {
     } 
     
     else if (commandName === 'pal-restart') {
-      await interaction.editReply('⏳ Restarting Palworld Docker container... (This might take a minute)');
-      const result = await system.restartPalworld();
-      
-      if (result.success) {
-        await interaction.editReply(`✅ **Palworld container successfully restarted!**\n\`\`\`\n${result.output}\n\`\`\``);
-      } else {
-        await interaction.editReply(`❌ **Failed to restart Palworld container.**\n\`\`\`\n${result.output}\n\`\`\``);
+      const confirm = new ButtonBuilder()
+        .setCustomId('confirm_pal_restart')
+        .setLabel('Yes, Restart Palworld')
+        .setStyle(ButtonStyle.Danger);
+
+      const cancel = new ButtonBuilder()
+        .setCustomId('cancel_restart')
+        .setLabel('Cancel')
+        .setStyle(ButtonStyle.Secondary);
+
+      const row = new ActionRowBuilder().addComponents(cancel, confirm);
+
+      const response = await interaction.editReply({
+        content: '⚠️ **Are you sure you want to restart the Palworld Dedicated Server?**\nThis will disconnect all active players.',
+        components: [row]
+      });
+
+      const filter = i => i.user.id === interaction.user.id;
+
+      try {
+        const confirmation = await response.awaitMessageComponent({ filter, time: 30000 });
+
+        if (confirmation.customId === 'confirm_pal_restart') {
+          await confirmation.update({ content: '⏳ Restarting Palworld Docker container... (This might take a minute)', components: [] });
+          const result = await system.restartPalworld();
+          
+          if (result.success) {
+            await interaction.editReply(`✅ **Palworld container successfully restarted!**\n\`\`\`\n${result.output}\n\`\`\``);
+          } else {
+            await interaction.editReply(`❌ **Failed to restart Palworld container.**\n\`\`\`\n${result.output}\n\`\`\``);
+          }
+        } else if (confirmation.customId === 'cancel_restart') {
+          await confirmation.update({ content: '❌ Restart cancelled.', components: [] });
+        }
+      } catch (e) {
+        await interaction.editReply({ content: '⏱️ Confirmation timed out. Restart cancelled.', components: [] });
       }
     } 
     
     else if (commandName === 'playit-restart') {
-      await interaction.editReply('⏳ Restarting playit.gg tunnel inside tmux...');
-      const result = await system.restartPlayit();
+      const confirm = new ButtonBuilder()
+        .setCustomId('confirm_playit_restart')
+        .setLabel('Yes, Restart Playit')
+        .setStyle(ButtonStyle.Danger);
 
-      if (result.success) {
-        await interaction.editReply(`✅ **Playit tunnel successfully restarted!**\n${result.output}`);
-      } else {
-        await interaction.editReply(`❌ **Failed to restart Playit tunnel.**\n${result.output}`);
+      const cancel = new ButtonBuilder()
+        .setCustomId('cancel_restart')
+        .setLabel('Cancel')
+        .setStyle(ButtonStyle.Secondary);
+
+      const row = new ActionRowBuilder().addComponents(cancel, confirm);
+
+      const response = await interaction.editReply({
+        content: '⚠️ **Are you sure you want to restart the playit.gg tunnel?**\nThis will temporarily disconnect all players trying to connect through the tunnel.',
+        components: [row]
+      });
+
+      const filter = i => i.user.id === interaction.user.id;
+
+      try {
+        const confirmation = await response.awaitMessageComponent({ filter, time: 30000 });
+
+        if (confirmation.customId === 'confirm_playit_restart') {
+          await confirmation.update({ content: '⏳ Restarting playit.gg tunnel inside tmux...', components: [] });
+          const result = await system.restartPlayit();
+
+          if (result.success) {
+            await interaction.editReply(`✅ **Playit tunnel successfully restarted!**\n${result.output}`);
+          } else {
+            await interaction.editReply(`❌ **Failed to restart Playit tunnel.**\n${result.output}`);
+          }
+        } else if (confirmation.customId === 'cancel_restart') {
+          await confirmation.update({ content: '❌ Restart cancelled.', components: [] });
+        }
+      } catch (e) {
+        await interaction.editReply({ content: '⏱️ Confirmation timed out. Restart cancelled.', components: [] });
       }
     } 
     
