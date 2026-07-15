@@ -1,0 +1,14 @@
+{
+  "name": "palworld-discord-bot",
+  "version": "1.0.0",
+  "description": "Discord bot to manage Palworld server (Docker Compose) and playit.gg tunnel (tmux) on a Proxmox VM",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.15.3",
+    "dotenv": "^16.4.5"
+  },
+  "private": true
+}
