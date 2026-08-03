@@ -84,9 +84,9 @@ async function restartPlayit() {
   // First, attempt to kill the existing tmux session if it is running
   await runCommand(`tmux kill-session -t ${config.tmuxSession}`);
   
-  // Start a new tmux session in detached mode running the playit command
-  const startCmd = `tmux new-session -d -s ${config.tmuxSession} '${config.playitCommand}'`;
-  const result = await runCommand(startCmd);
+  // Start a new tmux session in detached mode running the playit command inside palworldDir
+  const startCmd = `tmux new-session -d -s ${config.tmuxSession} -c "${config.palworldDir}" '${config.playitCommand}'`;
+  const result = await runCommand(startCmd, config.palworldDir);
   
   // Verify it started successfully
   const verify = await getPlayitStatus();
@@ -94,7 +94,7 @@ async function restartPlayit() {
   return {
     success: verify.running,
     output: verify.running 
-      ? `Tunnel restarted successfully inside tmux session "${config.tmuxSession}".`
+      ? `Tunnel restarted successfully inside tmux session "${config.tmuxSession}" (working dir: ${config.palworldDir}).`
       : `Failed to start tunnel. Command output: ${result.stderr || result.stdout}`
   };
 }
